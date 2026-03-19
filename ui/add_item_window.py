@@ -4,6 +4,9 @@ from PyQt6.QtWidgets import (
     QSpinBox, QMessageBox
 )
 
+import os
+import shutil
+import uuid
 from services.item_service import adicionar_item
 
 
@@ -70,6 +73,7 @@ class AddItemWindow(QWidget):
 
         if file:
             self.foto_path = file
+            self.btn_foto.setText("Foto Selecionada!") # Dá um feedback visual para o usuário
 
     def salvar_item(self):
 
@@ -83,17 +87,41 @@ class AddItemWindow(QWidget):
             QMessageBox.warning(self, "Erro", "Digite o nome do item")
             return
 
+        # --- NOVA LÓGICA DE TRATAMENTO DA IMAGEM ---
+        caminho_banco = ""
+
+        if self.foto_path:
+            # Cria uma pasta 'fotos' na raiz do projeto se ela não existir
+            os.makedirs("fotos", exist_ok=True)
+            
+            # Pega a extensão original do arquivo (ex: .png, .jpg)
+            extensao = os.path.splitext(self.foto_path)[1]
+            
+            # Cria um nome único aleatório para não dar conflito
+            novo_nome = f"{uuid.uuid4().hex}{extensao}"
+            
+            # Define o destino final da imagem
+            caminho_dest = os.path.join("fotos", novo_nome)
+            
+            try:
+                # Copia a imagem do PC do usuário para a pasta do projeto
+                shutil.copy(self.foto_path, caminho_dest)
+                caminho_banco = caminho_dest # Salvamos apenas o caminho relativo!
+            except Exception as e:
+                QMessageBox.warning(self, "Erro", f"Não foi possível processar a imagem: {e}")
+                return
+        # ---------------------------------------------
+
         adicionar_item(
             nome,
             caixa,
             localizacao,
             quantidade,
             quantidade_minima,
-            self.foto_path
+            caminho_banco # Passa o novo caminho em vez de self.foto_path
         )
 
         QMessageBox.information(self, "Sucesso", "Item adicionado!")
 
         self.atualizar_tabela()
-
         self.close()
