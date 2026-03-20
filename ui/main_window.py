@@ -4,8 +4,9 @@ from PyQt6.QtWidgets import (
     QAbstractItemView, QInputDialog, QMessageBox
 )
 from PyQt6.QtGui import QColor, QPixmap
-from PyQt6.QtCore import Qt  # <-- CORREÇÃO: Qt Importado aqui
+from PyQt6.QtCore import Qt 
 
+from ui.reports_window import ReportsWindow
 from services.item_service import listar_itens, atualizar_quantidade
 from ui.add_item_window import AddItemWindow
 from utils.alertas import estoque_baixo
@@ -13,9 +14,11 @@ from services.movimentacao_service import registrar_movimentacao
 
 class MainWindow(QMainWindow):
 
-    def __init__(self):
+    def __init__(self, usuario_id=None):
         super().__init__()
-        self.setWindowTitle("Sistema de Estoque TI")
+        self.usuario_id = usuario_id
+
+        self.setWindowTitle("Estoque TI")
         self.resize(900, 600)
 
         # WIDGET CENTRAL E LAYOUTS
@@ -30,8 +33,17 @@ class MainWindow(QMainWindow):
         self.search.setPlaceholderText("Pesquisar item...")
         self.search.textChanged.connect(self.filtrar_itens)
 
+        btn_relatorios = QPushButton("Ver Relatórios")
+        btn_relatorios.clicked.connect(self.abrir_relatorios)
+        
+        
+
         btn_add = QPushButton("Adicionar Item")
         btn_add.clicked.connect(self.abrir_add_item)
+
+        barra.addWidget(self.search)
+        barra.addWidget(btn_add)
+        barra.addWidget(btn_relatorios) # Adiciona o novo botão
 
         barra.addWidget(self.search)
         barra.addWidget(btn_add)
@@ -117,6 +129,8 @@ class MainWindow(QMainWindow):
             quantidade, ok = QInputDialog.getInt(
                 self, "Entrada de estoque", f"Quantidade para adicionar em {nome_item}:"
             )
+            registrar_movimentacao(item_id, "ENTRADA", quantidade, self.usuario_id)
+
             if ok:
                 atual = int(self.table.item(row, 4).text())
                 nova = atual + quantidade
@@ -126,9 +140,11 @@ class MainWindow(QMainWindow):
                 self.recarregar_tabela()
 
         elif action == saida:
+            
             quantidade, ok = QInputDialog.getInt(
                 self, "Saída de estoque", f"Quantidade para retirar de {nome_item}:", 1, 1
             )
+            registrar_movimentacao(item_id, "SAIDA", quantidade, self.usuario_id, observacao=destino)
             if not ok: return
 
             destino, ok = QInputDialog.getText(
@@ -148,3 +164,7 @@ class MainWindow(QMainWindow):
             # <-- CORREÇÃO: SAIDA maiúsculo para respeitar regra do banco
             registrar_movimentacao(item_id, "SAIDA", quantidade, observacao=destino)  
             self.recarregar_tabela()
+
+    def abrir_relatorios(self):
+        self.reports_win = ReportsWindow()
+        self.reports_win.show()
