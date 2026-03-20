@@ -120,50 +120,59 @@ class MainWindow(QMainWindow):
 
         from PyQt6.QtWidgets import QMenu
         menu = QMenu()
+
         entrada = menu.addAction("Entrada de estoque")
         saida = menu.addAction("Saída de estoque")
+        menu.addSeparator() # Linha divisória para organizar
+        editar = menu.addAction("Editar Item")
+        excluir = menu.addAction("Excluir Item")
 
         action = menu.exec(self.cursor().pos())
 
         if action == entrada:
-            quantidade, ok = QInputDialog.getInt(
-                self, "Entrada de estoque", f"Quantidade para adicionar em {nome_item}:"
-            )
-            registrar_movimentacao(item_id, "ENTRADA", quantidade, self.usuario_id)
-
+            # ... (mantenha o seu código atual de entrada aqui) ...
+            quantidade, ok = QInputDialog.getInt(self, "Entrada de estoque", f"Quantidade para adicionar em {nome_item}:")
             if ok:
                 atual = int(self.table.item(row, 4).text())
                 nova = atual + quantidade
                 atualizar_quantidade(item_id, nova)
-                # <-- CORREÇÃO: ENTRADA maiúsculo para respeitar regra do banco
-                registrar_movimentacao(item_id, "ENTRADA", quantidade) 
+                registrar_movimentacao(item_id, "ENTRADA", quantidade, self.usuario_id) 
                 self.recarregar_tabela()
 
         elif action == saida:
-            
-            quantidade, ok = QInputDialog.getInt(
-                self, "Saída de estoque", f"Quantidade para retirar de {nome_item}:", 1, 1
-            )
-            registrar_movimentacao(item_id, "SAIDA", quantidade, self.usuario_id, observacao=destino)
+            # ... (mantenha o seu código atual de saída aqui) ...
+            quantidade, ok = QInputDialog.getInt(self, "Saída de estoque", f"Quantidade para retirar de {nome_item}:", 1, 1)
             if not ok: return
-
-            destino, ok = QInputDialog.getText(
-                self, "Saída de estoque", f"Para onde vai esta saída?\n(ex: Obra X, Manutenção, Cliente Y)"
-            )
+            destino, ok = QInputDialog.getText(self, "Saída de estoque", f"Para onde vai esta saída?\n(ex: Obra X, Manutenção)")
             if not ok or not destino.strip():
                 QMessageBox.warning(self, "Atenção", "É obrigatório informar o destino.")
                 return
-
             atual = int(self.table.item(row, 4).text())
             if quantidade > atual:
                 QMessageBox.warning(self, "Erro", f"Estoque insuficiente! Disponível: {atual}")
                 return
-
             nova = atual - quantidade
             atualizar_quantidade(item_id, nova)
-            # <-- CORREÇÃO: SAIDA maiúsculo para respeitar regra do banco
-            registrar_movimentacao(item_id, "SAIDA", quantidade, observacao=destino)  
+            registrar_movimentacao(item_id, "SAIDA", quantidade, self.usuario_id, observacao=destino)  
             self.recarregar_tabela()
+
+        # ---> ADICIONE AS NOVAS AÇÕES AQUI <---
+        elif action == editar:
+            from ui.edit_item_window import EditItemWindow
+            self.edit_window = EditItemWindow(item_id, self.recarregar_tabela)
+            self.edit_window.show()
+
+        elif action == excluir:
+            # Pede confirmação antes de apagar
+            resposta = QMessageBox.question(
+                self, "Confirmar Exclusão",
+                f"Tem certeza que deseja excluir o item '{nome_item}'?\nIsso não pode ser desfeito.",
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+            )
+            if resposta == QMessageBox.StandardButton.Yes:
+                from services.item_service import excluir_item
+                excluir_item(item_id)
+                self.recarregar_tabela()
 
     def abrir_relatorios(self):
         self.reports_win = ReportsWindow()

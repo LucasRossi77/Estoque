@@ -28,3 +28,29 @@ def atualizar_quantidade(item_id, nova_quantidade):
     """, (nova_quantidade, item_id))
     conn.commit()
     conn.close()
+
+def buscar_item_por_id(item_id):
+    conn = connect()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM itens WHERE id_item = ?", (item_id,))
+    item = cursor.fetchone()
+    conn.close()
+    return dict(item) if item else None
+
+def atualizar_item(item_id, nome, caixa, localizacao, quantidade_minima):
+    conn = connect()
+    cursor = conn.cursor()
+    cursor.execute("""
+        UPDATE itens
+        SET nome = ?, caixa = ?, localizacao = ?, quantidade_minima = ?
+        WHERE id_item = ?
+    """, (nome, caixa, localizacao, quantidade_minima, item_id))
+    conn.commit()
+    conn.close()
+
+def excluir_item(item_id):
+    conn = connect()
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM itens WHERE id_item = ?", (item_id,))
+    conn.commit()
+    conn.close()

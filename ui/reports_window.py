@@ -23,7 +23,7 @@ class ReportsWindow(QWidget):
         self.table = QTableWidget()
         self.table.setColumnCount(6)
         self.table.setHorizontalHeaderLabels([
-            "Data/Hora", "Item", "Tipo", "Qtd", "Responsável", "Observação"
+            "Item", "Qtd", "Tipo", "Responsável", "Data", "Observação"
         ])
         
         # Ajusta as colunas para ocuparem o espaço disponível
@@ -43,11 +43,11 @@ class ReportsWindow(QWidget):
             # Formatando a data (pegando apenas os caracteres principais)
             data_formatada = str(mov["data"])[:19]
             
-            self.table.setItem(row, 0, QTableWidgetItem(data_formatada))
-            self.table.setItem(row, 1, QTableWidgetItem(mov["item_nome"]))
+            self.table.setItem(row, 0, QTableWidgetItem(mov["item_nome"]))
+            self.table.setItem(row, 1, QTableWidgetItem(str(mov["quantidade"])))
             self.table.setItem(row, 2, QTableWidgetItem(mov["tipo"]))
-            self.table.setItem(row, 3, QTableWidgetItem(str(mov["quantidade"])))
-            self.table.setItem(row, 4, QTableWidgetItem(mov["usuario_nome"] or "Sistema"))
+            self.table.setItem(row, 3, QTableWidgetItem(mov["usuario_nome"] or "Registro Antigo (Sem Usuário)"))
+            self.table.setItem(row, 4, QTableWidgetItem(data_formatada))
             self.table.setItem(row, 5, QTableWidgetItem(mov["observacao"] or "-"))
 
             # Cores para diferenciar Entrada de Saída
