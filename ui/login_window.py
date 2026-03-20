@@ -4,7 +4,7 @@ from PyQt6.QtWidgets import (
 )
 from PyQt6.QtCore import Qt
 from services.usuario_service import autenticar_usuario
-from ui.main_window import MainWindow
+from ui.app_window import AppWindow
 
 class LoginWindow(QWidget):
     def __init__(self):
@@ -23,7 +23,7 @@ class LoginWindow(QWidget):
         layout.addWidget(titulo)
 
         # Campo Usuário
-        layout.addWidget(QLabel("Usuário:"))
+        layout.addWidget(QLabel("Nome de Usuário:"))
         self.input_login = QLineEdit()
         layout.addWidget(self.input_login)
 
@@ -48,27 +48,27 @@ class LoginWindow(QWidget):
         self.setLayout(layout)
 
     def fazer_login(self):
-        """Esta função cuida APENAS de verificar quem entra"""
+        
         login = self.input_login.text()
         senha = self.input_senha.text()
 
+        
         if not login or not senha:
-            QMessageBox.warning(self, "Atenção", "Preencha todos os campos!")
+            QMessageBox.warning(self, "", "Preencha todos os campos!")
             return
 
         usuario = autenticar_usuario(login, senha)
 
         if usuario:
-            # Se o usuário existe, abre a tela principal
-            self.main_window = MainWindow(usuario_id=usuario['id_usuario'])
-            self.main_window.show()
-            self.close() 
+            
+            from ui.app_window import AppWindow 
+            self.app_window = AppWindow(usuario_id=usuario['id_usuario'], login_window=self)
+            self.app_window.show()
+            self.hide() 
         else:
-            # Se não existe, mostra erro
-            QMessageBox.critical(self, "Erro", "Usuário ou senha incorretos!")
+            QMessageBox.critical(self, "", "Dados incorretos!")
 
     def abrir_registro(self):
-        """Esta função cuida APENAS de abrir a tela de cadastro"""
         from ui.register_window import RegisterWindow 
         self.janela_registro = RegisterWindow()
         self.janela_registro.show()

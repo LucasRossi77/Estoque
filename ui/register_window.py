@@ -26,7 +26,7 @@ class RegisterWindow(QWidget):
         layout.addWidget(self.input_nome)
 
         # Login
-        layout.addWidget(QLabel("Nome de Usuário:"))
+        layout.addWidget(QLabel("Nome e Sobrenome:"))
         self.input_login = QLineEdit()
         layout.addWidget(self.input_login)
 

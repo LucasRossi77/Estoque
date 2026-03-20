@@ -4,11 +4,12 @@ from PyQt6.QtWidgets import (
 )
 from services.item_service import buscar_item_por_id, atualizar_item
 
-class EditItemWindow(QWidget):
-    def __init__(self, item_id, atualizar_tabela):
+class EditItemWidget(QWidget): # <--- Aqui estava "Windet", mude para "Widget"
+    def __init__(self, item_id, atualizar_tabela, voltar_callback):
         super().__init__()
-        self.item_id = item_id
+        self.item_id = item_id # <--- ADICIONE ESTA LINHA (faltou no seu código)
         self.atualizar_tabela = atualizar_tabela
+        self.voltar_callback = voltar_callback
 
         self.setWindowTitle("Editar Item")
         self.setGeometry(250, 250, 300, 350)
@@ -61,4 +62,4 @@ class EditItemWindow(QWidget):
         QMessageBox.information(self, "Sucesso", "Item atualizado com sucesso!")
         
         self.atualizar_tabela()
-        self.close()
+        self.voltar_callback() 

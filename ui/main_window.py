@@ -1,49 +1,35 @@
 from PyQt6.QtWidgets import (
-    QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
+    QWidget, QVBoxLayout, QHBoxLayout,
     QPushButton, QLineEdit, QTableWidget, QTableWidgetItem, QLabel,
     QAbstractItemView, QInputDialog, QMessageBox
 )
 from PyQt6.QtGui import QColor, QPixmap
 from PyQt6.QtCore import Qt 
 
-from ui.reports_window import ReportsWindow
 from services.item_service import listar_itens, atualizar_quantidade
-from ui.add_item_window import AddItemWindow
 from utils.alertas import estoque_baixo
 from services.movimentacao_service import registrar_movimentacao
 
-class MainWindow(QMainWindow):
-
-    def __init__(self, usuario_id=None):
+class EstoqueWidget(QWidget):
+    def __init__(self, usuario_id, callback_add, callback_edit):
         super().__init__()
         self.usuario_id = usuario_id
+        self.callback_add = callback_add   
+        self.callback_edit = callback_edit 
 
-        self.setWindowTitle("Estoque TI")
-        self.resize(900, 600)
-
-        # WIDGET CENTRAL E LAYOUTS
-        central_widget = QWidget()
-        self.setCentralWidget(central_widget)
         layout = QVBoxLayout()
-        central_widget.setLayout(layout)
+        self.setLayout(layout)
 
-        # BARRA SUPERIOR
+        # 1. Primeiro criamos a barra e os componentes
         barra = QHBoxLayout()
         self.search = QLineEdit()
-        self.search.setPlaceholderText("Pesquisar item...")
         self.search.textChanged.connect(self.filtrar_itens)
-
-        btn_relatorios = QPushButton("Ver Relatórios")
-        btn_relatorios.clicked.connect(self.abrir_relatorios)
+        self.search.setPlaceholderText("Pesquisar item...")
         
-        
-
         btn_add = QPushButton("Adicionar Item")
-        btn_add.clicked.connect(self.abrir_add_item)
-
-        barra.addWidget(self.search)
-        barra.addWidget(btn_add)
-        barra.addWidget(btn_relatorios) # Adiciona o novo botão
+        
+        # 2. DEPOIS de criar o btn_add, nós fazemos o connect
+        btn_add.clicked.connect(self.callback_add) 
 
         barra.addWidget(self.search)
         barra.addWidget(btn_add)
@@ -52,10 +38,10 @@ class MainWindow(QMainWindow):
         # TABELA
         self.table = QTableWidget()
         self.table.setColumnCount(6)
-        self.table.setHorizontalHeaderLabels([
-            "Foto", "Nome", "Caixa", "Localização", "Quantidade", "Min"
-        ])
+        self.table.setHorizontalHeaderLabels(["Foto", "Nome", "Caixa", "Localização", "Quantidade", "Min"])
         self.table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+        self.table.setSelectionMode(QAbstractItemView.SelectionMode.NoSelection)
+        self.table.setFocusPolicy(Qt.FocusPolicy.NoFocus) 
         self.table.cellDoubleClicked.connect(self.abrir_menu_item)
         layout.addWidget(self.table)
 
@@ -96,19 +82,23 @@ class MainWindow(QMainWindow):
                 for col in range(6):
                     cell = self.table.item(row, col)
                     if cell:
-                        cell.setBackground(QColor(255,150,150))
+                        cell.setBackground(QColor(255,90,90))
 
     def filtrar_itens(self):
         texto = self.search.text().lower()
+        
         for row in range(self.table.rowCount()):
-            item = self.table.item(row, 1)
-            if item:
-                nome = item.text().lower()
-                self.table.setRowHidden(row, texto not in nome)
-
-    def abrir_add_item(self):
-        self.add_window = AddItemWindow(self.recarregar_tabela)
-        self.add_window.show()
+            # Pegamos o texto das 3 colunas
+            nome = self.table.item(row, 1).text().lower() if self.table.item(row, 1) else ""
+            caixa = self.table.item(row, 2).text().lower() if self.table.item(row, 2) else ""
+            local = self.table.item(row, 3).text().lower() if self.table.item(row, 3) else ""
+            
+            # Se o texto pesquisado estiver no Nome, OU na Caixa, OU no Local -> Mostra a linha
+            if texto in nome or texto in caixa or texto in local:
+                self.table.setRowHidden(row, False)
+            else:
+                # Se não achar em nenhum dos três -> Esconde a linha
+                self.table.setRowHidden(row, True)
 
     def recarregar_tabela(self):
         self.table.setRowCount(0)
@@ -130,7 +120,7 @@ class MainWindow(QMainWindow):
         action = menu.exec(self.cursor().pos())
 
         if action == entrada:
-            # ... (mantenha o seu código atual de entrada aqui) ...
+            
             quantidade, ok = QInputDialog.getInt(self, "Entrada de estoque", f"Quantidade para adicionar em {nome_item}:")
             if ok:
                 atual = int(self.table.item(row, 4).text())
@@ -140,12 +130,12 @@ class MainWindow(QMainWindow):
                 self.recarregar_tabela()
 
         elif action == saida:
-            # ... (mantenha o seu código atual de saída aqui) ...
+            
             quantidade, ok = QInputDialog.getInt(self, "Saída de estoque", f"Quantidade para retirar de {nome_item}:", 1, 1)
             if not ok: return
-            destino, ok = QInputDialog.getText(self, "Saída de estoque", f"Para onde vai esta saída?\n(ex: Obra X, Manutenção)")
-            if not ok or not destino.strip():
-                QMessageBox.warning(self, "Atenção", "É obrigatório informar o destino.")
+            observacao, ok = QInputDialog.getText(self, "Saída de estoque", f"Observação")
+            if not ok or not observacao.strip():
+                QMessageBox.warning(self, "Atenção", "É obrigatório informar Observação.")
                 return
             atual = int(self.table.item(row, 4).text())
             if quantidade > atual:
@@ -153,17 +143,15 @@ class MainWindow(QMainWindow):
                 return
             nova = atual - quantidade
             atualizar_quantidade(item_id, nova)
-            registrar_movimentacao(item_id, "SAIDA", quantidade, self.usuario_id, observacao=destino)  
+            registrar_movimentacao(item_id, "SAIDA", quantidade, self.usuario_id, observacao=observacao)  
             self.recarregar_tabela()
 
-        # ---> ADICIONE AS NOVAS AÇÕES AQUI <---
+    
         elif action == editar:
-            from ui.edit_item_window import EditItemWindow
-            self.edit_window = EditItemWindow(item_id, self.recarregar_tabela)
-            self.edit_window.show()
+            self.callback_edit(item_id)
 
         elif action == excluir:
-            # Pede confirmação antes de apagar
+            
             resposta = QMessageBox.question(
                 self, "Confirmar Exclusão",
                 f"Tem certeza que deseja excluir o item '{nome_item}'?\nIsso não pode ser desfeito.",
@@ -173,7 +161,3 @@ class MainWindow(QMainWindow):
                 from services.item_service import excluir_item
                 excluir_item(item_id)
                 self.recarregar_tabela()
-
-    def abrir_relatorios(self):
-        self.reports_win = ReportsWindow()
-        self.reports_win.show()

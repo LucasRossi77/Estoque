@@ -10,16 +10,12 @@ import uuid
 from services.item_service import adicionar_item
 
 
-class AddItemWindow(QWidget):
-
-    def __init__(self, atualizar_tabela):
+class AddItemWidget(QWidget):
+    def __init__(self, atualizar_tabela, voltar_callback):
         super().__init__()
-
         self.atualizar_tabela = atualizar_tabela
+        self.voltar_callback = voltar_callback 
         self.foto_path = ""
-
-        self.setWindowTitle("Adicionar Item")
-        self.setGeometry(200, 200, 300, 400)
 
         layout = QVBoxLayout()
 
@@ -73,7 +69,7 @@ class AddItemWindow(QWidget):
 
         if file:
             self.foto_path = file
-            self.btn_foto.setText("Foto Selecionada!") # Dá um feedback visual para o usuário
+            self.btn_foto.setText("Foto Selecionada!") 
 
     def salvar_item(self):
 
@@ -82,7 +78,7 @@ class AddItemWindow(QWidget):
         localizacao = self.localizacao.text()
         quantidade = self.quantidade.value()
         quantidade_minima = self.quantidade_minima.value()
-
+        
         if not nome:
             QMessageBox.warning(self, "Erro", "Digite o nome do item")
             return
@@ -106,7 +102,7 @@ class AddItemWindow(QWidget):
             try:
                 # Copia a imagem do PC do usuário para a pasta do projeto
                 shutil.copy(self.foto_path, caminho_dest)
-                caminho_banco = caminho_dest # Salvamos apenas o caminho relativo!
+                caminho_banco = caminho_dest
             except Exception as e:
                 QMessageBox.warning(self, "Erro", f"Não foi possível processar a imagem: {e}")
                 return
@@ -118,10 +114,9 @@ class AddItemWindow(QWidget):
             localizacao,
             quantidade,
             quantidade_minima,
-            caminho_banco # Passa o novo caminho em vez de self.foto_path
+            caminho_banco 
         )
 
-        QMessageBox.information(self, "Sucesso", "Item adicionado!")
-
+        QMessageBox.information(self, "", "Item adicionado!")
         self.atualizar_tabela()
-        self.close()
+        self.voltar_callback()
