@@ -11,10 +11,11 @@ class ReportsWindow(QWidget):
 
         self.setWindowTitle("Relatórios de Movimentação")
         self.resize(800, 500)
+        self.setStyleSheet("background-color: #e8e0cc;")
 
         layout = QVBoxLayout()
 
-        titulo = QLabel("Histórico de Entradas e Saídas")
+        titulo = QLabel("Histórico de Movimentação")
         titulo.setStyleSheet("font-size: 18px; font-weight: bold; margin: 10px;")
         titulo.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(titulo)
@@ -23,7 +24,7 @@ class ReportsWindow(QWidget):
         self.table = QTableWidget()
         self.table.setColumnCount(6)
         self.table.setHorizontalHeaderLabels([
-            "Item", "Qtd", "Tipo", "Responsável", "Data", "Observação"
+            "Item", "Qtd", "Caminho", "Responsável", "Data", "Observação"
         ])
         
         # Ajusta as colunas para ocuparem o espaço disponível

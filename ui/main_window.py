@@ -16,6 +16,7 @@ class EstoqueWidget(QWidget):
         self.usuario_id = usuario_id
         self.callback_add = callback_add   
         self.callback_edit = callback_edit 
+        self.setStyleSheet("background-color: #e8e0cc;")
 
         layout = QVBoxLayout()
         self.setLayout(layout)

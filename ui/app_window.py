@@ -3,13 +3,14 @@ from PyQt6.QtWidgets import (
     QStackedWidget, QPushButton, QLabel
 )
 from PyQt6.QtCore import Qt
+from PyQt6.QtGui import QIcon
 
 from ui.profile_window import PerfilWidget
-from PyQt6.QtWidgets import QSpacerItem, QSizePolicy
 from ui.main_window import EstoqueWidget
 from ui.reports_window import ReportsWindow
 from ui.add_item_window import AddItemWidget
 from ui.edit_item_window import EditItemWidget
+from ui.dashboard_window import DashboardWidget
 
 class AppWindow(QMainWindow):
     def __init__(self, usuario_id, login_window): 
@@ -17,81 +18,142 @@ class AppWindow(QMainWindow):
         self.usuario_id = usuario_id
         self.login_window = login_window 
 
+        # Configurações Básicas
         self.setWindowTitle("Sistema de Gestão - TI")
-        self.resize(1100, 700)
+        self.resize(1200, 800)
+        self.setWindowIcon(QIcon('assets/icon.png')) 
 
-        
+        # --- ESTRUTURA PRINCIPAL ---
         central_widget = QWidget()
+        central_widget.setStyleSheet("background-color: #e8e0cc;")
         self.setCentralWidget(central_widget)
-        main_layout = QHBoxLayout(central_widget) 
+        
+        main_layout = QHBoxLayout(central_widget)
         main_layout.setContentsMargins(0, 0, 0, 0)
         main_layout.setSpacing(0)
 
-        # MENU LATERAL 
+        # --- MENU LATERAL 
         menu_widget = QWidget()
-        menu_widget.setFixedWidth(220)
-        menu_widget.setStyleSheet("background-color: #2c3e50; color: white;")
+        menu_widget.setFixedWidth(260)
+        menu_widget.setStyleSheet("background-color: #203266; border: none;")
         self.menu_layout = QVBoxLayout(menu_widget)
+        self.menu_layout.setContentsMargins(0, 0, 0, 0)
+        self.menu_layout.setSpacing(0)
 
-        # Botões do Menu 
+        # Título do Menu
+        self.label_titulo = QLabel("ESTOQUE - TI")
+        self.label_titulo.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.label_titulo.setStyleSheet("""
+            font-size: 30px; 
+            font-weight: bold; 
+            color: white; 
+            padding: 40px 10px;
+            border-bottom: 1px solid #2e4a9a;
+            margin-bottom: 10px;
+        """)
+        self.menu_layout.addWidget(self.label_titulo)
+
+        # Botões do Menu
         self.btn_perfil = self.criar_botao_menu("👤   Perfil")
         self.btn_estoque = self.criar_botao_menu("📦   Estoque")
         self.btn_relatorios = self.criar_botao_menu("📊   Relatórios")
-        
-        self.btn_sair = self.criar_botao_menu("🚪   Sair")
-        self.btn_sair.setStyleSheet(self.btn_sair.styleSheet() + "color: #ff4d4d;")
-        self.btn_sair.clicked.connect(self.logout)
+        self.btn_dashboard = self.criar_botao_menu("📈   Gráficos")
 
+        self.btn_sair = self.criar_botao_menu("🚪   Sair")
+        self.btn_sair.setStyleSheet(self.btn_sair.styleSheet() + "color: #EF4444; margin-top: 20px;")
         
         self.menu_layout.addWidget(self.btn_perfil)
         self.menu_layout.addWidget(self.btn_estoque)
         self.menu_layout.addWidget(self.btn_relatorios)
-        
-        self.menu_layout.addStretch() # Empurra o Sair para baixo
+        self.menu_layout.addWidget(self.btn_dashboard)
+
+        self.menu_layout.addStretch() 
         self.menu_layout.addWidget(self.btn_sair)
 
-        
-        self.stacked_widget = QStackedWidget() 
+        # --- ÁREA DE CONTEÚDO (STACKED WIDGET) ---
+        self.stacked_widget = QStackedWidget()
 
-        self.tela_perfil = PerfilWidget()
+       
+        self.tela_perfil = PerfilWidget(self.usuario_id, self.logout)
         self.tela_estoque = EstoqueWidget(
             self.usuario_id, 
             self.ir_para_adicionar, 
             self.ir_para_editar     
         )
         self.tela_relatorios = ReportsWindow()
-        
-        
         self.tela_adicionar = AddItemWidget(self.tela_estoque.carregar_itens, self.voltar_para_estoque)
+        self.tela_dashboard = DashboardWidget()
 
-       
+        # Adicionando ao Stack
         self.stacked_widget.addWidget(self.tela_perfil)      # Índice 0
         self.stacked_widget.addWidget(self.tela_estoque)     # Índice 1
         self.stacked_widget.addWidget(self.tela_relatorios)  # Índice 2
         self.stacked_widget.addWidget(self.tela_adicionar)   # Índice 3
+        self.stacked_widget.addWidget(self.tela_dashboard)   # Indice 4
 
-       
-        main_layout.addWidget(menu_widget)     # Lado esquerdo
-        main_layout.addWidget(self.stacked_widget) # Lado direito
+        # Montando o Layout Final
+        main_layout.addWidget(menu_widget)
+        main_layout.addWidget(self.stacked_widget)
 
-        # Conectar Cliques do Menu
+        # Conectar Eventos
         self.btn_perfil.clicked.connect(lambda: self.mudar_tela(0))
         self.btn_estoque.clicked.connect(lambda: self.mudar_tela(1))
         self.btn_relatorios.clicked.connect(lambda: self.mudar_tela(2))
+        self.btn_dashboard.clicked.connect(lambda: self.mudar_tela(4))
+        self.btn_sair.clicked.connect(self.logout)
+
+        # Começar na tela de Estoque
+        self.stacked_widget.setCurrentIndex(1)
+
+        self.setStyleSheet("""
+    /* Estilo Geral da Janela */
+    QWidget { 
+        background-color: #e8e0cc; 
+        color: #1F2937; /* Cor do texto padrão */
+    }
+
+    /* Estilo Específico para as Tabelas */
+    QTableWidget {
+        background-color: white; /* Onde ficam os dados (fundo das células) */
+        alternate-background-color: #f2ede4; /* Cor para linhas alternadas (opcional) */
+        gridline-color: #d1c9b8;
+        border: 1px solid #d1c9b8;
+        color: #1F2937;
+    }
+
+    /* ESTA É A PARTE QUE CORRIGE O SEU PROBLEMA: */
+    QHeaderView::section {
+        background-color: #e8e0cc; /* Fundo do nome da coluna e números */
+        color: #1F2937;            /* Cor do texto (Preto/Cinza escuro) */
+        padding: 5px;
+        border: 1px solid #d1c9b8;
+        font-weight: bold;
+    }
+
+    /* Corretivo para o canto superior esquerdo da tabela */
+    QTableCornerButton::section {
+        background-color: #e8e0cc;
+        border: 1px solid #d1c9b8;
+    }
+    """)
 
     def criar_botao_menu(self, texto):
         btn = QPushButton(texto)
         btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        btn.setFixedHeight(60)
         btn.setStyleSheet("""
             QPushButton {
                 background-color: transparent;
-                color: white;
+                color: #FFFFFF;
                 text-align: left;
-                padding: 15px;
+                padding-left: 25px;
                 font-size: 15px;
                 border: none;
             }
-            QPushButton:hover { background-color: #34495e; }
+            QPushButton:hover {
+                background-color: #546dbf;
+                border-left: 5px solid #b5954a; /* Detalhe em Laranja/Verde */
+            }
         """)
         return btn
 
@@ -100,23 +162,19 @@ class AppWindow(QMainWindow):
         if index == 2:
             self.tela_relatorios.carregar_dados()
 
-    
     def ir_para_adicionar(self):
-        self.stacked_widget.setCurrentIndex(3) # Cadastro é o 3
+        self.stacked_widget.setCurrentIndex(3)
 
     def ir_para_editar(self, item_id):
         self.tela_editar = EditItemWidget(item_id, self.tela_estoque.carregar_itens, self.voltar_para_estoque)
-        
-        # Remove edição anterior se existir para não acumular memória
         if self.stacked_widget.count() > 4:
             self.stacked_widget.removeWidget(self.stacked_widget.widget(4))
-            
         self.stacked_widget.addWidget(self.tela_editar)
-        self.stacked_widget.setCurrentIndex(4) # Edição será o 4
+        self.stacked_widget.setCurrentIndex(4)
 
     def voltar_para_estoque(self):
-        self.stacked_widget.setCurrentIndex(1) # Estoque agora é o índice 1
+        self.stacked_widget.setCurrentIndex(1)
 
     def logout(self):
         self.close()
-        self.login_window.show()    
+        self.login_window.show()

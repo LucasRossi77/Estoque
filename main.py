@@ -1,7 +1,7 @@
 import sys
 from PyQt6.QtWidgets import QApplication
 from database.create_tables import create_tables
-from ui.login_window import LoginWindow # Importamos o Login
+from ui.login_window import LoginWindow 
 
 def main():
     create_tables()

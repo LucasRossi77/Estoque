@@ -53,3 +53,33 @@ def registrar_usuario(nome, login, senha, nivel="usuario"):
         conn.close()
         
     return sucesso, mensagem
+
+def obter_usuario_por_id(usuario_id):
+    conn = connect()
+    cursor = conn.cursor()
+    cursor.execute("SELECT nome, login FROM usuarios WHERE id_usuario = ?", (usuario_id,))
+    usuario = cursor.fetchone()
+    conn.close()
+    return {"nome": usuario[0], "login": usuario[1]} if usuario else None
+
+def atualizar_dados_usuario(usuario_id, nome, login):
+    conn = connect()
+    cursor = conn.cursor()
+    cursor.execute("UPDATE usuarios SET nome = ?, login = ? WHERE id_usuario = ?", (nome, login, usuario_id))
+    conn.commit()
+    conn.close()
+
+def atualizar_senha_usuario(usuario_id, nova_senha):
+    conn = connect()
+    cursor = conn.cursor()
+    # Lembre-se: em um sistema real a senha deve ser criptografada (hash)!
+    cursor.execute("UPDATE usuarios SET senha = ? WHERE id_usuario = ?", (nova_senha, usuario_id))
+    conn.commit()
+    conn.close()
+
+def excluir_usuario_db(usuario_id):
+    conn = connect()
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM usuarios WHERE id_usuario = ?", (usuario_id,))
+    conn.commit()
+    conn.close()
