@@ -35,7 +35,7 @@ class AppWindow(QMainWindow):
         # --- MENU LATERAL 
         menu_widget = QWidget()
         menu_widget.setFixedWidth(260)
-        menu_widget.setStyleSheet("background-color: #203266; border: none;")
+        menu_widget.setStyleSheet("background-color: #223959; border: none;")
         self.menu_layout = QVBoxLayout(menu_widget)
         self.menu_layout.setContentsMargins(0, 0, 0, 0)
         self.menu_layout.setSpacing(0)
@@ -48,7 +48,6 @@ class AppWindow(QMainWindow):
             font-weight: bold; 
             color: white; 
             padding: 40px 10px;
-            border-bottom: 1px solid #2e4a9a;
             margin-bottom: 10px;
         """)
         self.menu_layout.addWidget(self.label_titulo)
