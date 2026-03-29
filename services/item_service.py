@@ -37,16 +37,34 @@ def buscar_item_por_id(item_id):
     conn.close()
     return dict(item) if item else None
 
-def atualizar_item(item_id, nome, caixa, localizacao, quantidade_minima):
+def atualizar_item(id_item, nome, caixa, localizacao, quantidade_minima, quantidade, foto):
+    """
+    Atualiza todas as informações do item no banco de dados.
+    Recebe os 7 argumentos enviados pelo EditItemWidget.
+    """
+    from database.connection import connect # Certifique-se que o import do seu banco está correto
+    
     conn = connect()
     cursor = conn.cursor()
-    cursor.execute("""
-        UPDATE itens
-        SET nome = ?, caixa = ?, localizacao = ?, quantidade_minima = ?
-        WHERE id_item = ?
-    """, (nome, caixa, localizacao, quantidade_minima, item_id))
-    conn.commit()
-    conn.close()
+    
+    try:
+        cursor.execute("""
+            UPDATE itens 
+            SET nome = ?, 
+                caixa = ?, 
+                localizacao = ?, 
+                quantidade_minima = ?, 
+                quantidade = ?, 
+                foto = ?
+            WHERE id_item = ?
+        """, (nome, caixa, localizacao, quantidade_minima, quantidade, foto, id_item))
+        
+        conn.commit()
+    except Exception as e:
+        print(f"Erro ao atualizar item no banco: {e}")
+        raise e
+    finally:
+        conn.close()
 
 def excluir_item(item_id):
     conn = connect()

@@ -1,8 +1,10 @@
 from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QLabel,
-    QLineEdit, QPushButton, QMessageBox, QFrame
+    QLineEdit, QPushButton, QMessageBox, QFrame,
+    QGraphicsDropShadowEffect # <-- IMPORTANTE: Para a sombra
 )
 from PyQt6.QtCore import Qt
+from PyQt6.QtGui import QColor
 from services.usuario_service import autenticar_usuario
 
 class LoginWindow(QWidget):
@@ -10,24 +12,47 @@ class LoginWindow(QWidget):
         super().__init__()
 
         self.setWindowTitle("Login - Estoque TI")
-        # Janela maior para um visual mais imponente
-        self.setFixedSize(450, 550) 
-        # Fundo Azul Escuro fora da borda
-        self.setStyleSheet("background-color: #1E293B;") 
+        self.setFixedSize(550, 650) 
+        # Fundo Azul Escuro (Slate)
+        self.setStyleSheet("""
+            /* Fundo da janela principal continua azul escuro */
+            LoginWindow, RegisterWindow { 
+                background-color: #1E293B; 
+            }
+            
+            /* Estilização da Caixa de Mensagem (Aviso/Erro) */
+            QMessageBox {
+                background-color: #F3F4F6; /* Fundo cinza bem claro */
+            }
+            QMessageBox QLabel {
+                color: #1F2937; /* Texto quase preto para leitura perfeita */
+                background: transparent;
+                font-size: 14px;
+            }
+            QMessageBox QPushButton {
+                background-color: #1F2937;
+                color: white;
+                border-radius: 4px;
+                padding: 6px 15px;
+                min-width: 80px;
+                font-weight: bold;
+            }
+            QMessageBox QPushButton:hover {
+                background-color: #374151;
+            }
+        """) 
 
-        # Layout Principal
         layout_principal = QVBoxLayout()
         layout_principal.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout_principal.setContentsMargins(40, 40, 40, 40)
 
         # --- CARD DE LOGIN ---
         self.card = QFrame()
-        # Fundo Bege Claro dentro do card
         self.card.setStyleSheet("""
             QFrame {
-                background-color: #e8e0cc;
+                background-color: #e8e0cc; /* Bege Claro */
                 border-radius: 20px;
-                border: 2px solid #d1c9b8;
+                border: 1px solid #d1c9b8;
             }
             QLabel { 
                 border: none; 
@@ -36,6 +61,15 @@ class LoginWindow(QWidget):
                 background: transparent;
             }
         """)
+        
+        # --- APLICANDO A SOMBRA SUAVE ---
+        sombra = QGraphicsDropShadowEffect()
+        sombra.setBlurRadius(50)          # Intensidade do desfoque
+        sombra.setXOffset(-10)              # Deslocamento horizontal
+        sombra.setYOffset(20)             # Deslocamento vertical (faz o card "subir")
+        sombra.setColor(QColor(0, 0, 0, 160)) # Cor preta com transparência (0-255)
+        self.card.setGraphicsEffect(sombra)
+
         layout_card = QVBoxLayout(self.card)
         layout_card.setSpacing(20)
         layout_card.setContentsMargins(35, 45, 35, 45)
@@ -61,13 +95,13 @@ class LoginWindow(QWidget):
         self.input_senha.setStyleSheet(self.estilo_input())
         layout_card.addWidget(self.input_senha)
 
-        # Botão de Entrar (Ajustado para não cortar e com destaque)
+        # Botão de Entrar (Grande e sem cortes)
         self.btn_entrar = QPushButton("ENTRAR")
         self.btn_entrar.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.btn_entrar.setMinimumHeight(55) # Altura maior para o texto não cortar
+        self.btn_entrar.setMinimumHeight(55) 
         self.btn_entrar.setStyleSheet("""
             QPushButton {
-                background-color: #1F2937; /* Azul quase preto para contrastar no bege */
+                background-color: #1F2937;
                 color: white;
                 border-radius: 10px;
                 padding: 10px;
@@ -76,12 +110,8 @@ class LoginWindow(QWidget):
                 margin-top: 15px;
                 border: none;
             }
-            QPushButton:hover {
-                background-color: #334155;
-            }
-            QPushButton:pressed {
-                background-color: #0F172A;
-            }
+            QPushButton:hover { background-color: #334155; }
+            QPushButton:pressed { background-color: #0F172A; }
         """)
         self.btn_entrar.clicked.connect(self.fazer_login)
         layout_card.addWidget(self.btn_entrar)
@@ -98,9 +128,7 @@ class LoginWindow(QWidget):
                 font-size: 12px;
                 margin-top: 5px;
             }
-            QPushButton:hover {
-                color: #475569;
-            }
+            QPushButton:hover { color: #475569; }
         """)
         self.btn_registrar.clicked.connect(self.abrir_registro)
         layout_card.addWidget(self.btn_registrar)

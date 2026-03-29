@@ -32,7 +32,7 @@ class AppWindow(QMainWindow):
         main_layout.setContentsMargins(0, 0, 0, 0)
         main_layout.setSpacing(0)
 
-        # --- MENU LATERAL 
+        # --- MENU LATERAL ---
         menu_widget = QWidget()
         menu_widget.setFixedWidth(260)
         menu_widget.setStyleSheet("background-color: #223959; border: none;")
@@ -71,7 +71,6 @@ class AppWindow(QMainWindow):
 
         # --- ÁREA DE CONTEÚDO (STACKED WIDGET) ---
         self.stacked_widget = QStackedWidget()
-
        
         self.tela_perfil = PerfilWidget(self.usuario_id, self.logout)
         self.tela_estoque = EstoqueWidget(
@@ -88,7 +87,10 @@ class AppWindow(QMainWindow):
         self.stacked_widget.addWidget(self.tela_estoque)     # Índice 1
         self.stacked_widget.addWidget(self.tela_relatorios)  # Índice 2
         self.stacked_widget.addWidget(self.tela_adicionar)   # Índice 3
-        self.stacked_widget.addWidget(self.tela_dashboard)   # Indice 4
+        self.stacked_widget.addWidget(self.tela_dashboard)   # Índice 4
+
+        # Variável para controlar a tela de edição
+        self.tela_editar = None
 
         # Montando o Layout Final
         main_layout.addWidget(menu_widget)
@@ -105,36 +107,29 @@ class AppWindow(QMainWindow):
         self.stacked_widget.setCurrentIndex(1)
 
         self.setStyleSheet("""
-    /* Estilo Geral da Janela */
-    QWidget { 
-        background-color: #e8e0cc; 
-        color: #1F2937; /* Cor do texto padrão */
-    }
-
-    /* Estilo Específico para as Tabelas */
-    QTableWidget {
-        background-color: white; /* Onde ficam os dados (fundo das células) */
-        alternate-background-color: #f2ede4; /* Cor para linhas alternadas (opcional) */
-        gridline-color: #d1c9b8;
-        border: 1px solid #d1c9b8;
-        color: #1F2937;
-    }
-
-    /* ESTA É A PARTE QUE CORRIGE O SEU PROBLEMA: */
-    QHeaderView::section {
-        background-color: #e8e0cc; /* Fundo do nome da coluna e números */
-        color: #1F2937;            /* Cor do texto (Preto/Cinza escuro) */
-        padding: 5px;
-        border: 1px solid #d1c9b8;
-        font-weight: bold;
-    }
-
-    /* Corretivo para o canto superior esquerdo da tabela */
-    QTableCornerButton::section {
-        background-color: #e8e0cc;
-        border: 1px solid #d1c9b8;
-    }
-    """)
+            QWidget { 
+                background-color: #e8e0cc; 
+                color: #1F2937; 
+            }
+            QTableWidget {
+                background-color: white; 
+                alternate-background-color: #f2ede4; 
+                gridline-color: #d1c9b8;
+                border: 1px solid #d1c9b8;
+                color: #1F2937;
+            }
+            QHeaderView::section {
+                background-color: #e8e0cc; 
+                color: #1F2937;            
+                padding: 5px;
+                border: 1px solid #d1c9b8;
+                font-weight: bold;
+            }
+            QTableCornerButton::section {
+                background-color: #e8e0cc;
+                border: 1px solid #d1c9b8;
+            }
+        """)
 
     def criar_botao_menu(self, texto):
         btn = QPushButton(texto)
@@ -151,7 +146,7 @@ class AppWindow(QMainWindow):
             }
             QPushButton:hover {
                 background-color: #546dbf;
-                border-left: 5px solid #b5954a; /* Detalhe em Laranja/Verde */
+                border-left: 5px solid #b5954a; 
             }
         """)
         return btn
@@ -165,11 +160,15 @@ class AppWindow(QMainWindow):
         self.stacked_widget.setCurrentIndex(3)
 
     def ir_para_editar(self, item_id):
+        # Remove a edição anterior para não bugar a memória
+        if self.tela_editar:
+            self.stacked_widget.removeWidget(self.tela_editar)
+            self.tela_editar.deleteLater()
+
+        # Cria a tela e adiciona no Stack (sem apagar o dashboard)
         self.tela_editar = EditItemWidget(item_id, self.tela_estoque.carregar_itens, self.voltar_para_estoque)
-        if self.stacked_widget.count() > 4:
-            self.stacked_widget.removeWidget(self.stacked_widget.widget(4))
         self.stacked_widget.addWidget(self.tela_editar)
-        self.stacked_widget.setCurrentIndex(4)
+        self.stacked_widget.setCurrentWidget(self.tela_editar)
 
     def voltar_para_estoque(self):
         self.stacked_widget.setCurrentIndex(1)
