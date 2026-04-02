@@ -4,7 +4,7 @@ from PyQt6.QtWidgets import (
     QGraphicsDropShadowEffect
 )
 from PyQt6.QtCore import Qt
-from PyQt6.QtGui import QColor
+from PyQt6.QtGui import QColor, QGuiApplication # <-- Adicionado QGuiApplication
 from services.usuario_service import registrar_usuario
 
 class RegisterWindow(QWidget):
@@ -12,21 +12,20 @@ class RegisterWindow(QWidget):
         super().__init__()
 
         self.setWindowTitle("Nova Conta - Estoque TI")
-        # Janela um pouco mais alta para acomodar os 4 campos confortavelmente
         self.setFixedSize(550, 650) 
-        # Fundo Azul Escuro (Slate)
+        
+        # --- CENTRALIZAÇÃO COM OFFSET ---
+        self.centralizar_direita()
+
         self.setStyleSheet("""
-            /* Fundo da janela principal continua azul escuro */
             LoginWindow, RegisterWindow { 
                 background-color: #1E293B; 
             }
-            
-            /* Estilização da Caixa de Mensagem (Aviso/Erro) */
             QMessageBox {
-                background-color: #F3F4F6; /* Fundo cinza bem claro */
+                background-color: #F3F4F6;
             }
             QMessageBox QLabel {
-                color: #1F2937; /* Texto quase preto para leitura perfeita */
+                color: #1F2937;
                 background: transparent;
                 font-size: 14px;
             }
@@ -47,11 +46,10 @@ class RegisterWindow(QWidget):
         layout_principal.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout_principal.setContentsMargins(40, 40, 40, 40)
 
-        # --- CARD DE CADASTRO ---
         self.card = QFrame()
         self.card.setStyleSheet("""
             QFrame {
-                background-color: #e8e0cc; /* Bege Claro */
+                background-color: #e8e0cc; /* Bege original mantido */
                 border-radius: 20px;
                 border: 1px solid #d1c9b8;
             }
@@ -63,7 +61,6 @@ class RegisterWindow(QWidget):
             }
         """)
 
-        # --- APLICANDO A SOMBRA SUAVE ---
         sombra = QGraphicsDropShadowEffect()
         sombra.setBlurRadius(30)
         sombra.setXOffset(-10)
@@ -72,30 +69,26 @@ class RegisterWindow(QWidget):
         self.card.setGraphicsEffect(sombra)
 
         layout_card = QVBoxLayout(self.card)
-        layout_card.setSpacing(12) # Espaçamento entre labels e inputs
+        layout_card.setSpacing(12)
         layout_card.setContentsMargins(30, 35, 30, 35)
 
-        # Título
         titulo = QLabel("CADASTRO DE USUÁRIO")
         titulo.setStyleSheet("font-size: 20px; margin-bottom: 15px; color: #1F2937; background: transparent;")
         titulo.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout_card.addWidget(titulo)
 
-        # Campo Nome
         layout_card.addWidget(QLabel("Nome e Sobrenome:"))
         self.input_nome = QLineEdit()
         self.input_nome.setPlaceholderText("Ex: João Pedro")
         self.input_nome.setStyleSheet(self.estilo_input())
         layout_card.addWidget(self.input_nome)
 
-        # Campo Login
         layout_card.addWidget(QLabel("Nome de Usuário (Login):"))
         self.input_login = QLineEdit()
         self.input_login.setPlaceholderText("Como irá entrar no sistema...")
         self.input_login.setStyleSheet(self.estilo_input())
         layout_card.addWidget(self.input_login)
 
-        # Campo Senha
         layout_card.addWidget(QLabel("Senha:"))
         self.input_senha = QLineEdit()
         self.input_senha.setPlaceholderText("Crie uma senha forte")
@@ -103,7 +96,6 @@ class RegisterWindow(QWidget):
         self.input_senha.setStyleSheet(self.estilo_input())
         layout_card.addWidget(self.input_senha)
 
-        # Campo Confirmar Senha
         layout_card.addWidget(QLabel("Confirme a Senha:"))
         self.input_confirma_senha = QLineEdit()
         self.input_confirma_senha.setPlaceholderText("Repita a senha")
@@ -111,7 +103,6 @@ class RegisterWindow(QWidget):
         self.input_confirma_senha.setStyleSheet(self.estilo_input())
         layout_card.addWidget(self.input_confirma_senha)
 
-        # Botão de Cadastrar (Grande e sem cortes)
         self.btn_cadastrar = QPushButton("FINALIZAR CADASTRO")
         self.btn_cadastrar.setCursor(Qt.CursorShape.PointingHandCursor)
         self.btn_cadastrar.setMinimumHeight(55) 
@@ -134,6 +125,13 @@ class RegisterWindow(QWidget):
 
         layout_principal.addWidget(self.card)
         self.setLayout(layout_principal)
+
+    def centralizar_direita(self):
+        qr = self.frameGeometry()
+        cp = QGuiApplication.primaryScreen().availableGeometry().center()
+        qr.moveCenter(cp)
+        nova_pos = qr.topLeft()
+        self.move(nova_pos.x() + 50, nova_pos.y()) 
 
     def estilo_input(self):
         return """
