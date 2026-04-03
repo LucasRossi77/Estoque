@@ -4,13 +4,13 @@ from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit,
     QPushButton, QFrame, QTableWidget, QTableWidgetItem, QHeaderView, QMessageBox,
     QAbstractItemView, QSpinBox, QComboBox, QGridLayout, QScrollArea, QStackedWidget,
-    QMenu, QFileDialog # <-- Adicionado QMenu e QFileDialog para exportação
+    QMenu, QFileDialog
 )
 from datetime import datetime 
 from PyQt6.QtCore import Qt, QSize
 from PyQt6.QtGui import (
     QColor, QIcon, QPixmap, 
-    QTextDocument, QPdfWriter # <-- Adicionado para exportar para PDF nativamente
+    QTextDocument, QPdfWriter
 )
 
 # =====================================================================
@@ -27,7 +27,6 @@ class VisaoBlocosWidget(QWidget):
         self.layout_principal = QVBoxLayout(self)
         self.layout_principal.setContentsMargins(0, 0, 0, 0)
         
-        # Navegação (Breadcrumb)
         self.layout_nav = QHBoxLayout()
         self.btn_voltar = QPushButton("⬅ Voltar")
         self.btn_voltar.setCursor(Qt.CursorShape.PointingHandCursor)
@@ -72,11 +71,14 @@ class VisaoBlocosWidget(QWidget):
 
         for index, (local,) in enumerate(locais):
             btn = QPushButton(f"📍\n{local}")
-            btn.setFixedSize(140, 100)
-            btn.setStyleSheet("background-color: #223959; color: white; font-weight: bold; font-size: 14px; border-radius: 8px;")
+            # --- BLOCOS MAIORES AQUI ---
+            btn.setFixedSize(180, 130) 
+            btn.setStyleSheet("background-color: #223959; color: white; font-weight: bold; font-size: 16px; border-radius: 8px;")
             btn.setCursor(Qt.CursorShape.PointingHandCursor)
             btn.clicked.connect(lambda checked, l=local: self.carregar_caixas(l))
-            linha, coluna = divmod(index, 5)
+            
+            # Ajustei o divisor para 4 colunas ao invés de 5, já que os blocos ficaram maiores
+            linha, coluna = divmod(index, 4)
             self.layout_grid.addWidget(btn, linha, coluna)
 
     def carregar_caixas(self, local):
@@ -94,11 +96,12 @@ class VisaoBlocosWidget(QWidget):
 
         for index, (caixa,) in enumerate(caixas):
             btn = QPushButton(f"📦\n{caixa}")
-            btn.setFixedSize(140, 100)
-            btn.setStyleSheet("background-color: #223959; color: white; font-weight: bold; font-size: 14px; border-radius: 8px;")
+            # --- BLOCOS MAIORES AQUI ---
+            btn.setFixedSize(180, 130)
+            btn.setStyleSheet("background-color: #223959; color: white; font-weight: bold; font-size: 16px; border-radius: 8px;")
             btn.setCursor(Qt.CursorShape.PointingHandCursor)
             btn.clicked.connect(lambda checked, c=caixa: self.carregar_itens_final(c))
-            linha, coluna = divmod(index, 5)
+            linha, coluna = divmod(index, 4)
             self.layout_grid.addWidget(btn, linha, coluna)
 
     def carregar_itens_final(self, caixa):
@@ -115,6 +118,7 @@ class VisaoBlocosWidget(QWidget):
 
         for index, row in enumerate(itens):
             card = QFrame()
+            # --- TAMANHO DO ITEM MANTIDO ORIGINAL ---
             card.setFixedSize(160, 200)
             card.setStyleSheet("background-color: white; border: 1px solid #d1c9b8; border-radius: 8px;")
             l_card = QVBoxLayout(card)
@@ -143,7 +147,7 @@ class VisaoBlocosWidget(QWidget):
             l_card.addWidget(lbl_n)
             l_card.addWidget(lbl_q)
             
-            linha, coluna = divmod(index, 5)
+            linha, coluna = divmod(index, 5) # Itens cabem mais, então mantive 5
             self.layout_grid.addWidget(card, linha, coluna)
 
     def voltar_nivel(self):
@@ -161,7 +165,6 @@ class EstoqueWidget(QWidget):
         self.callback_adicionar = callback_adicionar
         self.callback_editar = callback_editar
         
-        # Caminhos
         pasta_ui = os.path.dirname(os.path.abspath(__file__))
         self.caminho_db = os.path.abspath(os.path.join(pasta_ui, "..", "database.db"))
         self.pasta_fotos = os.path.abspath(os.path.join(pasta_ui, "..")) 
@@ -171,12 +174,10 @@ class EstoqueWidget(QWidget):
         layout_principal.setContentsMargins(20, 20, 20, 20)
         layout_principal.setSpacing(15)
 
-        # 1. CABEÇALHO
         lbl_titulo = QLabel("Controle de Estoque")
         lbl_titulo.setStyleSheet("font-size: 24px; font-weight: bold; color: #1F2937;")
         layout_principal.addWidget(lbl_titulo)
 
-        # 2. CARTÕES DE MÉTRICAS
         layout_cards = QHBoxLayout()
         self.lbl_total_itens = self.criar_cartao(layout_cards, "Itens Cadastrados")
         self.lbl_unidades = self.criar_cartao(layout_cards, "Unidades em Estoque")
@@ -184,7 +185,6 @@ class EstoqueWidget(QWidget):
         self.lbl_movimentacoes = self.criar_cartao(layout_cards, "Movimentações Hoje")
         layout_principal.addLayout(layout_cards)
 
-        # 3. BARRA DE FILTROS E BUSCA
         frame_filtros = QFrame()
         frame_filtros.setStyleSheet("background-color: white; border-radius: 8px; border: 1px solid #d1c9b8;")
         layout_f = QHBoxLayout(frame_filtros)
@@ -224,14 +224,23 @@ class EstoqueWidget(QWidget):
         layout_f.addWidget(btn_limpar)
         layout_principal.addWidget(frame_filtros)
 
-        # 4. BOTÕES DE AÇÃO (CRUD + EXPORTAR)
+        # =========================================================
+        # SEPARAÇÃO DOS BOTÕES DE AÇÃO (ESQUERDA E DIREITA)
+        # =========================================================
         layout_acoes = QHBoxLayout()
-        layout_crud = QHBoxLayout()
-        layout_crud.addWidget(self.criar_botao_acao("Adicionar", "#9c9075", self.callback_adicionar))
-        layout_crud.addWidget(self.criar_botao_acao("Editar", "#9c9075", self.editar_selecionado))
-        layout_crud.addWidget(self.criar_botao_acao("Excluir", "#9c9075", self.deletar_item))
         
-        # --- ALTERAÇÃO AQUI: Botão Exportar com Menu Dropdown ---
+        # --- Botões de CRUD (Ficam na Esquerda) ---
+        layout_esq = QHBoxLayout()
+        layout_esq.addWidget(self.criar_botao_acao("Adicionar", "#9c9075", self.callback_adicionar))
+        layout_esq.addWidget(self.criar_botao_acao("Editar", "#9c9075", self.editar_selecionado))
+        layout_esq.addWidget(self.criar_botao_acao("Excluir", "#9c9075", self.deletar_item))
+        layout_acoes.addLayout(layout_esq)
+
+        # O addStretch funciona como uma mola que empurra os botões seguintes para a direita
+        layout_acoes.addStretch()
+
+        # --- Botões Especiais (Ficam na Direita) ---
+        layout_dir = QHBoxLayout()
         self.btn_exportar = QPushButton("📥 Exportar")
         self.btn_exportar.setCursor(Qt.CursorShape.PointingHandCursor)
         self.btn_exportar.setStyleSheet("background-color: #059669; color: white; border-radius: 5px; padding: 10px 18px; font-weight: bold;")
@@ -249,17 +258,16 @@ class EstoqueWidget(QWidget):
         acao_xlsx.triggered.connect(self.exportar_excel)
         
         self.btn_exportar.setMenu(menu_exportar)
-        layout_crud.addWidget(self.btn_exportar)
-        # --------------------------------------------------------
+        layout_dir.addWidget(self.btn_exportar)
 
         self.btn_toggle_vista = self.criar_botao_acao("🗂️ Ver em Blocos", "#223959", self.alternar_vista)
-        layout_crud.addWidget(self.btn_toggle_vista)
+        layout_dir.addWidget(self.btn_toggle_vista)
 
-        layout_acoes.addLayout(layout_crud)
-        layout_acoes.addStretch() 
+        layout_acoes.addLayout(layout_dir)
+        # =========================================================
+
         layout_principal.addLayout(layout_acoes)
 
-        # 5. TABELA DENTRO DO QSTACKEDWIDGET
         self.stack = QStackedWidget()
 
         self.tabela = QTableWidget()
@@ -289,7 +297,6 @@ class EstoqueWidget(QWidget):
 
         layout_principal.addWidget(self.stack) 
 
-        # 6. PAINEL DE MOVIMENTAÇÃO NA PARTE INFERIOR
         self.frame_mov = QFrame()
         self.frame_mov.setFixedHeight(80)
         self.frame_mov.setStyleSheet("background-color: #223959; border-radius: 12px;")
@@ -543,19 +550,22 @@ class EstoqueWidget(QWidget):
         finally:
             conn.close()
 
-    # =================================================================
-    # FUNÇÕES DE EXPORTAÇÃO (NOVO)
-    # =================================================================
     def exportar_pdf(self):
+        from PyQt6.QtGui import QPageSize
+
         caminho, _ = QFileDialog.getSaveFileName(self, "Salvar Relatório PDF", "Relatorio_Estoque.pdf", "Arquivos PDF (*.pdf)")
         if not caminho: 
             return
 
-        # Monta a tabela em HTML usando os dados filtrados na tela
         html = """
+        <html><head><style>
+            table { width: 100%; border-collapse: collapse; font-family: Arial, sans-serif; font-size: 12px; }
+            th, td { border: 1px solid #d1c9b8; padding: 8px; text-align: center; }
+            th { background-color: #e8e0cc; color: #1F2937; }
+        </style></head><body>
         <h2 style='text-align: center; font-family: Arial; color: #1F2937;'>Relatório de Estoque</h2>
-        <table border='1' cellspacing='0' cellpadding='6' width='100%' style='border-collapse: collapse; font-family: Arial; font-size: 12px;'>
-            <tr style='background-color: #e8e0cc;'>
+        <table>
+            <tr>
                 <th>ID</th>
                 <th>Nome do Item</th>
                 <th>Qtd</th>
@@ -566,20 +576,25 @@ class EstoqueWidget(QWidget):
         """
         
         for row in range(self.tabela.rowCount()):
+            if self.tabela.isRowHidden(row): 
+                continue
+            
             html += "<tr>"
-            # As colunas da tabela são: 0=ID, 1=Fotos(ignoramos), 2=Nome, 3=Qtd, 4=Min, 5=Local, 6=Caixa
             for col in [0, 2, 3, 4, 5, 6]: 
-                texto = self.tabela.item(row, col).text()
-                html += f"<td style='text-align: center;'>{texto}</td>"
+                item = self.tabela.item(row, col)
+                texto = item.text() if item else ""
+                html += f"<td>{texto}</td>"
             html += "</tr>"
         
-        html += "</table>"
+        html += "</table></body></html>"
         
         doc = QTextDocument()
         doc.setHtml(html)
         
         writer = QPdfWriter(caminho)
-        writer.setPageSize(QPdfWriter.PageSize.A4)
+        writer.setPageSize(QPageSize(QPageSize.PageSizeId.A4))
+        writer.setResolution(96) 
+        
         doc.print(writer)
         
         QMessageBox.information(self, "Sucesso", "Relatório exportado para PDF com sucesso!")
@@ -599,11 +614,12 @@ class EstoqueWidget(QWidget):
         ws = wb.active
         ws.title = "Estoque"
         
-        # Cabeçalhos
         ws.append(["ID", "Nome do Item", "Quantidade", "Qtd Mínima", "Localização", "Caixa"])
         
-        # Insere as linhas baseadas na tabela atual
         for row in range(self.tabela.rowCount()):
+            if self.tabela.isRowHidden(row):
+                continue
+            
             ws.append([
                 self.tabela.item(row, 0).text(),
                 self.tabela.item(row, 2).text(),

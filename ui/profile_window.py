@@ -1,164 +1,263 @@
 from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QLabel, QLineEdit, QPushButton, 
-    QMessageBox, QHBoxLayout, QInputDialog
+    QMessageBox, QHBoxLayout, QFrame, QSpacerItem, QSizePolicy
 )
 from PyQt6.QtCore import Qt
-# IMPORTANTE: Adicionamos o autenticar_usuario aqui na lista de importações!
+from PyQt6.QtGui import QCursor
 from services.usuario_service import (
     obter_usuario_por_id, atualizar_dados_usuario, 
     atualizar_senha_usuario, excluir_usuario_db, autenticar_usuario
 )
+from PyQt6.QtWidgets import QInputDialog
 
 class PerfilWidget(QWidget):
     def __init__(self, usuario_id, callback_logout):
         super().__init__()
         self.usuario_id = usuario_id
         self.callback_logout = callback_logout
-        self.login_atual = "" # Vamos guardar o login para facilitar a verificação da senha
+        self.login_atual = "" 
+        
         self.setStyleSheet("background-color: #e8e0cc;")
 
-        layout = QVBoxLayout()
-        layout.setAlignment(Qt.AlignmentFlag.AlignTop)
+        layout_principal = QVBoxLayout(self)
+        layout_principal.setAlignment(Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignHCenter)
+        layout_principal.setContentsMargins(20, 40, 20, 20)
 
-        titulo = QLabel("👤 Meu Perfil")
-        titulo.setStyleSheet("font-size: 24px; font-weight: bold; margin-bottom: 20px;")
-        layout.addWidget(titulo)
+        # ==========================================
+        # CARD PRINCIPAL
+        # ==========================================
+        self.card = QFrame()
+        self.card.setFixedWidth(400)
+        self.card.setStyleSheet("""
+            QFrame {
+                background-color: white;
+                border-radius: 15px;
+                border: 1px solid #d1c9b8;
+            }
+        """)
+        
+        layout_card = QVBoxLayout(self.card)
+        layout_card.setContentsMargins(30, 30, 30, 30)
+        layout_card.setSpacing(10)
 
-        # --- CAMPOS DE INFORMAÇÃO ---
-        layout.addWidget(QLabel("Nome Completo:"))
+        # --- AVATAR (Círculo no topo) ---
+        lbl_avatar = QLabel("👤")
+        lbl_avatar.setFixedSize(70, 70)
+        lbl_avatar.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        lbl_avatar.setStyleSheet("""
+            QLabel {
+                background-color: #f1f5f9;
+                color: #64748b;
+                font-size: 35px;
+                border-radius: 35px; /* Deixa redondo */
+                border: 2px solid #e2e8f0;
+            }
+        """)
+        
+        layout_avatar = QHBoxLayout()
+        layout_avatar.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        layout_avatar.addWidget(lbl_avatar)
+        layout_card.addLayout(layout_avatar)
+
+        # Título
+        titulo = QLabel("Meu Perfil")
+        titulo.setStyleSheet("font-size: 22px; font-weight: bold; color: #1F2937; margin-bottom: 20px; border: none;")
+        titulo.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        layout_card.addWidget(titulo)
+
+        # ==========================================
+        # ESTILOS DOS INPUTS (LEITURA VS EDIÇÃO)
+        # ==========================================
+        self.estilo_readonly = """
+            QLineEdit {
+                padding: 8px 0px;
+                border: none;
+                border-bottom: 2px solid #e2e8f0;
+                background-color: transparent;
+                font-size: 16px;
+                color: #1F2937;
+                font-weight: bold;
+            }
+        """
+        self.estilo_edit = """
+            QLineEdit {
+                padding: 10px;
+                border: 2px solid #3b82f6;
+                border-radius: 6px;
+                background-color: #f8fafc;
+                font-size: 15px;
+                color: #1e293b;
+            }
+        """
+
+        # --- CAMPOS ---
+        lbl_nome = QLabel("NOME COMPLETO")
+        lbl_nome.setStyleSheet("font-size: 11px; font-weight: bold; color: #94a3b8; border: none;")
+        layout_card.addWidget(lbl_nome)
+        
         self.input_nome = QLineEdit()
-        layout.addWidget(self.input_nome)
+        self.input_nome.setReadOnly(True)
+        self.input_nome.setStyleSheet(self.estilo_readonly)
+        layout_card.addWidget(self.input_nome)
 
-        layout.addWidget(QLabel("Nome de Usuário (Login):"))
+        layout_card.addSpacing(10)
+
+        lbl_login = QLabel("USUÁRIO (LOGIN)")
+        lbl_login.setStyleSheet("font-size: 11px; font-weight: bold; color: #94a3b8; border: none;")
+        layout_card.addWidget(lbl_login)
+        
         self.input_login = QLineEdit()
-        layout.addWidget(self.input_login)
+        self.input_login.setReadOnly(True)
+        self.input_login.setStyleSheet(self.estilo_readonly)
+        layout_card.addWidget(self.input_login)
 
-        # --- BOTÕES DE EDIÇÃO (Lado a Lado) ---
-        botoes_edicao_layout = QHBoxLayout()
+        layout_card.addSpacing(20)
+
+        # ==========================================
+        # BOTÕES DE CONTROLE DE EDIÇÃO
+        # ==========================================
+        self.layout_botoes_edicao = QHBoxLayout()
         
-        self.btn_editar = QPushButton("✏️ Editar Informações")
-        self.btn_editar.setStyleSheet("background-color: #E0B041; color: white; padding: 8px;")
-        self.btn_editar.clicked.connect(self.habilitar_edicao)
-        
-        self.btn_salvar = QPushButton("💾 Salvar Alterações")
-        self.btn_salvar.setStyleSheet("background-color: #27ae60; color: white; padding: 8px;")
-        self.btn_salvar.clicked.connect(self.salvar_dados)
-        
-        self.btn_cancelar = QPushButton("❌ Cancelar")
-        self.btn_cancelar.setStyleSheet("background-color: #7f8c8d; color: white; padding: 8px;")
+        self.btn_editar = QPushButton("✏️ Editar Dados")
+        self.btn_editar.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+        self.btn_editar.setStyleSheet("""
+            QPushButton { background-color: #f1f5f9; color: #334155; font-weight: bold; border-radius: 6px; padding: 10px; border: none; }
+            QPushButton:hover { background-color: #e2e8f0; }
+        """)
+        self.btn_editar.clicked.connect(lambda: self.alternar_modo_edicao(True))
+
+        self.btn_cancelar = QPushButton("✖ Cancelar")
+        self.btn_cancelar.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+        self.btn_cancelar.setStyleSheet("""
+            QPushButton { background-color: #fef2f2; color: #ef4444; font-weight: bold; border-radius: 6px; padding: 10px; border: none; }
+            QPushButton:hover { background-color: #fee2e2; }
+        """)
         self.btn_cancelar.clicked.connect(self.cancelar_edicao)
+        self.btn_cancelar.hide()
 
-        botoes_edicao_layout.addWidget(self.btn_editar)
-        botoes_edicao_layout.addWidget(self.btn_salvar)
-        botoes_edicao_layout.addWidget(self.btn_cancelar)
-        layout.addLayout(botoes_edicao_layout)
+        self.btn_salvar = QPushButton("💾 Salvar")
+        self.btn_salvar.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+        self.btn_salvar.setStyleSheet("""
+            QPushButton { background-color: #10B981; color: white; font-weight: bold; border-radius: 6px; padding: 10px; border: none; }
+            QPushButton:hover { background-color: #059669; }
+        """)
+        self.btn_salvar.clicked.connect(self.salvar_perfil)
+        self.btn_salvar.hide()
 
-        layout.addSpacing(30) # Dá um respiro na tela
-
-        # --- ÁREA DE SEGURANÇA ---
-        titulo_seguranca = QLabel("🔒 Segurança e Conta")
-        titulo_seguranca.setStyleSheet("font-size: 18px; font-weight: bold;")
-        layout.addWidget(titulo_seguranca)
-
-        botoes_seguranca_layout = QHBoxLayout()
+        self.layout_botoes_edicao.addWidget(self.btn_editar)
+        self.layout_botoes_edicao.addWidget(self.btn_cancelar)
+        self.layout_botoes_edicao.addWidget(self.btn_salvar)
         
-        self.btn_senha = QPushButton("🔑 Mudar Senha")
-        self.btn_senha.setStyleSheet("background-color: #E0B041; color: white; padding: 8px;")
-        self.btn_senha.clicked.connect(self.mudar_senha)
-        
-        btn_excluir = QPushButton("🗑️ Excluir Conta")
-        btn_excluir.setStyleSheet("background-color: #c0392b; color: white; padding: 8px;")
-        btn_excluir.clicked.connect(self.excluir_conta)
+        layout_card.addLayout(self.layout_botoes_edicao)
 
-        botoes_seguranca_layout.addWidget(self.btn_senha)
-        botoes_seguranca_layout.addWidget(btn_excluir)
-        layout.addLayout(botoes_seguranca_layout)
+        # --- LINHA DIVISÓRIA ---
+        linha = QFrame()
+        linha.setFrameShape(QFrame.Shape.HLine)
+        linha.setStyleSheet("border-top: 1px solid #e2e8f0; margin: 15px 0; border-left: none; border-right: none; border-bottom: none;")
+        layout_card.addWidget(linha)
 
-        self.setLayout(layout)
-        
+        # ==========================================
+        # BOTÕES DE SEGURANÇA
+        # ==========================================
+        self.btn_alterar_senha = QPushButton("🔑 Alterar Senha")
+        self.btn_alterar_senha.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+        self.btn_alterar_senha.setStyleSheet("""
+            QPushButton { background-color: #3B82F6; color: white; font-weight: bold; border-radius: 6px; padding: 10px; border: none; }
+            QPushButton:hover { background-color: #2563EB; }
+        """)
+        self.btn_alterar_senha.clicked.connect(self.alterar_senha)
+        layout_card.addWidget(self.btn_alterar_senha)
+
+        self.btn_excluir = QPushButton("Excluir Minha Conta")
+        self.btn_excluir.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+        self.btn_excluir.setStyleSheet("""
+            QPushButton { background-color: transparent; color: #94a3b8; text-decoration: underline; font-weight: bold; padding: 5px; border: none; margin-top: 10px; }
+            QPushButton:hover { color: #EF4444; }
+        """)
+        self.btn_excluir.clicked.connect(self.excluir_conta)
+        layout_card.addWidget(self.btn_excluir)
+
+        layout_principal.addWidget(self.card)
+        layout_principal.addSpacerItem(QSpacerItem(20, 40, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding))
+
         self.carregar_dados()
-        self.travar_campos()
 
+    # ==========================================
+    # LÓGICA DE INTERFACE E DADOS
+    # ==========================================
     def carregar_dados(self):
         usuario = obter_usuario_por_id(self.usuario_id)
         if usuario:
             self.input_nome.setText(usuario['nome'])
             self.input_login.setText(usuario['login'])
-            self.login_atual = usuario['login'] # Guarda na memória
+            self.login_atual = usuario['login']
 
-    def travar_campos(self):
-        self.input_nome.setReadOnly(True)
-        self.input_login.setReadOnly(True)
+    def alternar_modo_edicao(self, ativado):
+        self.input_nome.setReadOnly(not ativado)
+        self.input_login.setReadOnly(not ativado)
         
-        estilo_bloqueado = "background-color: #f2f2f2; border: 1px solid #ccc; color: #555; padding: 5px;"
-        self.input_nome.setStyleSheet(estilo_bloqueado)
-        self.input_login.setStyleSheet(estilo_bloqueado)
-
-        self.btn_editar.setVisible(True)
-        self.btn_salvar.setVisible(False)
-        self.btn_cancelar.setVisible(False)
-
-    def habilitar_edicao(self):
-        """Libera a edição e muda a cor para branco"""
-        self.input_nome.setReadOnly(False)
-        self.input_login.setReadOnly(False)
-        
-        estilo_livre = "background-color: white; border: 1px solid #3498db; color: black; padding: 5px;"
-        self.input_nome.setStyleSheet(estilo_livre)
-        self.input_login.setStyleSheet(estilo_livre)
-
-        self.btn_editar.setVisible(False)
-        self.btn_salvar.setVisible(True)
-        self.btn_cancelar.setVisible(True)
+        if ativado:
+            self.input_nome.setStyleSheet(self.estilo_edit)
+            self.input_login.setStyleSheet(self.estilo_edit)
+            self.btn_editar.hide()
+            self.btn_cancelar.show()
+            self.btn_salvar.show()
+            self.input_nome.setFocus()
+        else:
+            self.input_nome.setStyleSheet(self.estilo_readonly)
+            self.input_login.setStyleSheet(self.estilo_readonly)
+            self.btn_cancelar.hide()
+            self.btn_salvar.hide()
+            self.btn_editar.show()
 
     def cancelar_edicao(self):
-        self.carregar_dados()
-        self.travar_campos()
+        # Recarrega os dados do banco para desfazer o que o usuário digitou
+        self.carregar_dados() 
+        self.alternar_modo_edicao(False)
 
-    def salvar_dados(self):
-        novo_nome = self.input_nome.text()
-        novo_login = self.input_login.text()
-        
+    def salvar_perfil(self):
+        novo_nome = self.input_nome.text().strip()
+        novo_login = self.input_login.text().strip()
+
         if not novo_nome or not novo_login:
-            QMessageBox.warning(self, "", "Os campos não podem ficar vazios!")
+            QMessageBox.warning(self, "Aviso", "Os campos não podem ficar vazios!")
             return
 
-        atualizar_dados_usuario(self.usuario_id, novo_nome, novo_login)
-        self.login_atual = novo_login # Atualiza na memória
-        QMessageBox.information(self, "", "Dados atualizados com sucesso!")
-        self.travar_campos() # Salva e trava os campos automaticamente
+        sucesso, mensagem = atualizar_dados_usuario(self.usuario_id, novo_nome, novo_login)
+        if sucesso:
+            QMessageBox.information(self, "Sucesso", mensagem)
+            self.login_atual = novo_login
+            self.alternar_modo_edicao(False) # Volta pro modo leitura!
+        else:
+            QMessageBox.warning(self, "Erro", mensagem)
 
-    def mudar_senha(self):
-        # Pedir a senha antiga
+    def alterar_senha(self):
         senha_antiga, ok = QInputDialog.getText(
-            self, "", "Para liberar a troca, digite sua senha atual:", 
+            self, "Segurança", "Para continuar, digite sua senha ATUAL:", 
             QLineEdit.EchoMode.Password
         )
         
         if not ok or not senha_antiga:
-            return # Se cancelar ou der enter vazio, não faz nada
+            return 
             
-        # Validar a senha antiga
         if not autenticar_usuario(self.login_atual, senha_antiga):
-            QMessageBox.critical(self, "", "A senha atual está incorreta!")
+            QMessageBox.critical(self, "Erro", "A senha atual está incorreta!")
             return
 
-        # Se estiver correta, pedir a NOVA senha
         nova_senha, ok_nova = QInputDialog.getText(
-            self, "", "Digite sua nova senha:", 
+            self, "Nova Senha", "Digite sua nova senha:", 
             QLineEdit.EchoMode.Password
         )
         
         if ok_nova and nova_senha:
-            # 4. PASSO: Pedir para confirmar a nova senha (evita erros de digitação)
             confirmar_senha, ok_conf = QInputDialog.getText(
-                self, "", "Digite a nova senha novamente para confirmar:", 
+                self, "Confirmação", "Digite a nova senha novamente para confirmar:", 
                 QLineEdit.EchoMode.Password
             )
             
             if ok_conf and nova_senha == confirmar_senha:
                 atualizar_senha_usuario(self.usuario_id, nova_senha)
-                QMessageBox.information(self, "", "Sua senha foi alterada com sucesso!")
+                QMessageBox.information(self, "Sucesso", "Sua senha foi alterada com sucesso!")
             else:
                 QMessageBox.warning(self, "Erro", "As senhas não coincidem. Tente novamente.")
 
@@ -171,5 +270,5 @@ class PerfilWidget(QWidget):
 
         if resposta == QMessageBox.StandardButton.Yes:
             excluir_usuario_db(self.usuario_id)
-            QMessageBox.warning(self, "", "Sua conta foi excluída.")
+            QMessageBox.warning(self, "Conta Excluída", "Sua conta foi excluída.")
             self.callback_logout()
